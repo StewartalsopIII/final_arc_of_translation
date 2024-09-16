@@ -1,26 +1,20 @@
-const Replicate = require('replicate');
+import { kv } from '@vercel/kv'
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
-
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const { id } = req.query;
+    const { id } = req.query
     try {
-      const prediction = await replicate.predictions.get(id);
-      if (prediction.status === 'succeeded') {
-        res.status(200).json({ audioUrl: prediction.output });
-      } else if (prediction.status === 'failed') {
-        res.status(500).json({ error: 'TTS processing failed' });
+      const result = await kv.get(`tts:${id}`)
+      if (result) {
+        res.status(200).json({ audioUrl: result })
       } else {
-        res.status(202).json({ status: 'processing' });
+        res.status(202).json({ status: 'processing' })
       }
     } catch (error) {
-      res.status(500).json({ error: 'Failed to get TTS result', details: error.message });
+      res.status(500).json({ error: 'Failed to get TTS result', details: error.message })
     }
   } else {
-    res.setHeader('Allow', ['GET']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.setHeader('Allow', ['GET'])
+    res.status(405).end(`Method ${req.method} Not Allowed`)
   }
-};
+}
