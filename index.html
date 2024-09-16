@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation and Text-to-Speech App</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        input, select, button { margin: 10px 0; padding: 5px; }
+        button { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Translation and Text-to-Speech App</h1>
+    <input type="text" id="textInput" placeholder="Enter text to translate and speak">
+    <select id="languageSelect">
+        <option value="es">Spanish</option>
+        <option value="pt">Portuguese</option>
+        <option value="fr">French</option>
+        <option value="ru">Russian</option>
+    </select>
+    <button onclick="translateAndSpeak()">Translate and Speak</button>
+    <p id="output"></p>
+    <audio id="audio" controls style="display: none;"></audio>
+
+    <script>
+        async function translateAndSpeak() {
+            const text = document.getElementById('textInput').value;
+            const language = document.getElementById('languageSelect').value;
+            
+            if (!text.trim()) {
+                alert("Please enter some text to translate and speak.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/translate-and-speak', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, language })
+                });
+                const data = await response.json();
+                if (data.translatedText && data.audioUrl) {
+                    document.getElementById('output').textContent = data.translatedText;
+                    const audio = document.getElementById('audio');
+                    audio.src = data.audioUrl;
+                    audio.style.display = 'block';
+                    await audio.play();
+                } else if (data.error) {
+                    throw new Error(data.error + ': ' + (data.details || 'No details provided'));
+                } else {
+                    throw new Error('Unexpected response format');
+                }
+            } catch (error) {
+                console.error('Translation and TTS error:', error);
+                document.getElementById('output').textContent = 'Translation and TTS failed: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
